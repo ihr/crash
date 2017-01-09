@@ -28,6 +28,10 @@ import os
 import sys
 import re
 import logging
+import threading
+import functools
+import itertools
+import time
 
 from argparse import ArgumentParser
 from collections import namedtuple
@@ -81,6 +85,39 @@ Result = namedtuple('Result', ['cols',
 TABLE_SCHEMA_MIN_VERSION = StrictVersion("0.57.0")
 
 
+class ThreadWithResult(threading.Thread):
+
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self._result = None
+
+    def run(self):
+        if self._target is not None:
+            self._result = self._target(*self._args)
+
+    def join(self):
+        super().join()
+        return self._result
+
+
+def spinner(f):
+    @functools.wraps(f)
+    def wrapper(*args, **kw):
+        exec_thread = ThreadWithResult(target=f, args=args)
+        exec_thread.start()
+        spinner = itertools.cycle(('-', '\\', '|', '/'))
+        start = time.time()
+        elapsed = 0
+        while exec_thread.is_alive():
+            elapsed += (time.time() - start) / 100.
+            phase = next(spinner)
+            time.sleep(0.050)
+            print(
+                f'Executing query... elapsed: {elapsed:04.3f}ms {phase}', end='\r')
+        return exec_thread.join()
+    return wrapper
+
+
 def parse_config_path(args=sys.argv):
     """
     Preprocess sys.argv and extract --config argument.
@@ -91,7 +128,7 @@ def parse_config_path(args=sys.argv):
         idx = args.index('--config')
         if len(args) > idx + 1:
             config = args.pop(idx + 1)
-        _ = args.pop(idx)
+        args.pop(idx)
     return config
 
 
@@ -323,6 +360,7 @@ class CrateCmd(object):
         success = self.execute(line)
         self.exit_code = self.exit_code or int(not success)
 
+    @spinner
     def _execute(self, statement):
         try:
             self.cursor.execute(statement)

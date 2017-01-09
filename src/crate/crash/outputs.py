@@ -87,12 +87,12 @@ class OutputWriter(object):
             return highlight(json_str, self._json_lexer, self._formatter).rstrip('\n')
         return json_str
 
-    def write(self, result):
+    def write(self, result, end=''):
         output_f = self._formats[self.output_format]
         output = output_f(result)
         if output:
             for line in output:
-                self.writer.write(line)
+                self.writer.write(line, end)
         self.writer.write('\n')
 
     def raw(self, result):
