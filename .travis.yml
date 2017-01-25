@@ -15,6 +15,9 @@ install:
     - python bootstrap.py --setuptools-version=20.2.2
     - ./bin/buildout install scripts crate test
 
+before_script:
+    - bin/flake8 --ignore=E,C901,F401,F821 --count src
+
 script:
     - bin/coverage run bin/test
 
