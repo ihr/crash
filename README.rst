@@ -45,11 +45,14 @@ Installation
 As a Python Package
 -------------------
 
-Crash is available as a pip_ package.
+Crash is available as a pip_ package. To install pip follow the instructions here: https://pip.readthedocs.io/en/stable/installing/
 
 To install, run::
 
     $ pip install crash
+
+Or
+    $ pip3 install crash
 
 Now, run it::
 
